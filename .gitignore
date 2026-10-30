@@ -8,3 +8,5 @@ _backups/
 _duplicates_archive/
 *.incoming
 .env
+.env.*
+!.env.example
