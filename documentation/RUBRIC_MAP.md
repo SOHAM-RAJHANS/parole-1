@@ -1,0 +1,10 @@
+# Rubric Map (`RUBRIC_MAP.md`)
+
+**Competition**: Nebius x NVIDIA Global AI Hackathon 2026 — Track 3: Enterprise & Knowledge Retrieval [SOURCE: Dossier_00 p1]
+
+| Judging Criterion | Weight | Backend Deliverable Scoring This Criterion | Proof Artifact | Owner Lane | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Technical Depth & Security Architecture | $30\%$ [ASSUMPTION] | Out-of-process `kernel_guard.py` (path/IP canonicalizer, Base64 pipe decoder, `TAINT_FLAG` engine, `nemoclaw_sandbox.sh`) + 3-Speed Routing (`tier0_cache.py`, `tier1_jev.py`, `tier2_nebius.py`) | `results.json`, `pytest -q` green across all modules, `BENCHMARK_REPORT_V2.4.md` | Lanes 1a, 1b, 1c | planned |
+| Nebius AI Cloud & NVIDIA Nemotron Integration | $25\%$ [ASSUMPTION] | Dual-pass Tier 2 synthesis (`nvidia/nemotron-3-super-120b-a12b` at $\$0.30$ [SOURCE: Dossier_01 p5] per 1M tokens + `nvidia/Nemotron-3-Ultra-550b-a55b` at $\$1.00$ [SOURCE: Dossier_01 p5] per 1M tokens) + Nano fallback adapter | Live Tier 2 `PolicyDiff` JSON, remote Nebius VM `results.remote.json`, `uname -m` capture | Lane 1d, Phase 2 | planned |
+| Empirical Performance & Unit Economics | $25\%$ [ASSUMPTION] | `1.8 ms` [TARGET] p95 resolution latency (`1166x` [TARGET] faster than `2100 ms` [SOURCE: Dossier_01 p5] baseline) and $\$0.28$ [TARGET] per 1,000 actions ($91\%$ [TARGET] lower than $\$3.80$ [SOURCE: Dossier_01 p5] baseline) | `benchmarks/run_benchmark.py`, `results.json`, `frontend/public/telemetry_fallback_v2.4.json` | Wave 2 Integrator | planned |
+| Live Demo Reliability & UX Integration | $20\%$ [ASSUMPTION] | Zero-drop SSE stream (`GET /v1/policy/stream`), 180s choreography route (`POST /v1/demo/run-180s`), hot-reload (`POST /v1/policy/approve-diff`), and `parole_cli.py` | 180-second 1080p60 video take + `LIVE`/`REPLAY`/`SIMULATED` badge parity | Lane 1e, Wave 2 | planned |

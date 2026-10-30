@@ -1,0 +1,7 @@
+{
+  "contract_version": 1,
+  "sha256": {
+    "backend/schemas.py": "5924b5cd22519d9a97a43e0e8d9b954a579120f40e728a6e18fbee4d29147a12",
+    "contract.json": "5b577b61576093cec74961733da319b66eb976f13d4273291b59d829cf74ab7b"
+  }
+}

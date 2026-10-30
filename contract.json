@@ -1,0 +1,936 @@
+{
+  "contract_version": 1,
+  "project": "PAROLE",
+  "constants": {
+    "PROVENANCE_VALUES": [
+      "TRUSTED_USER",
+      "web/repo_payload"
+    ],
+    "TIER_VALUES": [
+      "KERNEL_HARD_DENY",
+      "TIER_0",
+      "TIER_1",
+      "TIER_2"
+    ],
+    "DECISION_VALUES": [
+      "ALLOWED",
+      "INTERCEPTED",
+      "AUTO_PROMOTED"
+    ],
+    "CAPABILITY_VALUES": [
+      "live",
+      "replay",
+      "simulated"
+    ],
+    "COST_USD_BY_TIER": {
+      "KERNEL_HARD_DENY": 0.0,
+      "TIER_0": 0.0,
+      "TIER_1": 0.0003,
+      "TIER_2": 0.008
+    },
+    "SUPER_120B_LABEL": "nemotron-3-super-120b-a12b ($0.30/M tokens)",
+    "ULTRA_550B_LABEL": "Nemotron-3-Ultra-550b-a55b ($1.00/M tokens)",
+    "CANONICAL_BROAD_RULE": "- GRANT ALL permissions TO *:*",
+    "CANONICAL_SCOPED_RULE": "+ PERMIT 10.0.4.0/24 ON /api/v1/*"
+  },
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/v1/policy/evaluate",
+      "request": "AgentActionRequest",
+      "response": "AgentActionEvent",
+      "demo_only": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/policy/stream",
+      "request": null,
+      "response": "SSE[AgentActionEvent]",
+      "demo_only": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/policy/approve-diff",
+      "request": "ApproveDiffRequest",
+      "response": "ApproveDiffResponse",
+      "demo_only": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/metrics/summary",
+      "request": null,
+      "response": "MetricsSummaryResponse",
+      "demo_only": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/demo/run-180s",
+      "request": null,
+      "response": "dict",
+      "demo_only": true
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "request": null,
+      "response": "dict",
+      "demo_only": false
+    }
+  ],
+  "models": {
+    "KernelTelemetry": {
+      "additionalProperties": false,
+      "properties": {
+        "sandbox_cmd": {
+          "default": "$ sandboxing --mode=landlock",
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Sandbox Cmd",
+          "type": "string"
+        },
+        "syscall_cmd": {
+          "default": "$ filtering --syscall=seccomp",
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Syscall Cmd",
+          "type": "string"
+        },
+        "vm_status": {
+          "default": "[STATUS: ISOLATED_VM]",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Vm Status",
+          "type": "string"
+        },
+        "override_status": {
+          "default": "[STATUS: VERIFIED_SAFE]",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Override Status",
+          "type": "string"
+        }
+      },
+      "title": "KernelTelemetry",
+      "type": "object"
+    },
+    "PolicyDiff": {
+      "additionalProperties": false,
+      "properties": {
+        "broad_antipattern": {
+          "default": "- GRANT ALL permissions TO *:*",
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Broad Antipattern",
+          "type": "string"
+        },
+        "scoped_rule": {
+          "default": "+ PERMIT 10.0.4.0/24 ON /api/v1/*",
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Scoped Rule",
+          "type": "string"
+        },
+        "super_120b_model": {
+          "default": "nemotron-3-super-120b-a12b ($0.30/M tokens)",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Super 120B Model",
+          "type": "string"
+        },
+        "super_120b_counterfactual": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Super 120B Counterfactual",
+          "type": "string"
+        },
+        "ultra_550b_model": {
+          "default": "Nemotron-3-Ultra-550b-a55b ($1.00/M tokens)",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Ultra 550B Model",
+          "type": "string"
+        },
+        "ultra_550b_verified": {
+          "title": "Ultra 550B Verified",
+          "type": "boolean"
+        },
+        "ultra_550b_audit_note": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Ultra 550B Audit Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "super_120b_counterfactual",
+        "ultra_550b_verified",
+        "ultra_550b_audit_note"
+      ],
+      "title": "PolicyDiff",
+      "type": "object"
+    },
+    "AgentActionRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Command",
+          "type": "string"
+        },
+        "workstation_node": {
+          "default": "PC-WORKSTATION-LOCAL",
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workstation Node",
+          "type": "string"
+        },
+        "target_resource": {
+          "anyOf": [
+            {
+              "maxLength": 1024,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Resource"
+        },
+        "provenance": {
+          "default": "TRUSTED_USER",
+          "enum": [
+            "TRUSTED_USER",
+            "web/repo_payload"
+          ],
+          "title": "Provenance",
+          "type": "string"
+        },
+        "taint_flag": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Taint Flag"
+        },
+        "auto_promote": {
+          "default": false,
+          "title": "Auto Promote",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "command"
+      ],
+      "title": "AgentActionRequest",
+      "type": "object"
+    },
+    "AgentActionEvent": {
+      "$defs": {
+        "KernelTelemetry": {
+          "additionalProperties": false,
+          "properties": {
+            "sandbox_cmd": {
+              "default": "$ sandboxing --mode=landlock",
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Sandbox Cmd",
+              "type": "string"
+            },
+            "syscall_cmd": {
+              "default": "$ filtering --syscall=seccomp",
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Syscall Cmd",
+              "type": "string"
+            },
+            "vm_status": {
+              "default": "[STATUS: ISOLATED_VM]",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Vm Status",
+              "type": "string"
+            },
+            "override_status": {
+              "default": "[STATUS: VERIFIED_SAFE]",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Override Status",
+              "type": "string"
+            }
+          },
+          "title": "KernelTelemetry",
+          "type": "object"
+        },
+        "PolicyDiff": {
+          "additionalProperties": false,
+          "properties": {
+            "broad_antipattern": {
+              "default": "- GRANT ALL permissions TO *:*",
+              "maxLength": 512,
+              "minLength": 1,
+              "title": "Broad Antipattern",
+              "type": "string"
+            },
+            "scoped_rule": {
+              "default": "+ PERMIT 10.0.4.0/24 ON /api/v1/*",
+              "maxLength": 512,
+              "minLength": 1,
+              "title": "Scoped Rule",
+              "type": "string"
+            },
+            "super_120b_model": {
+              "default": "nemotron-3-super-120b-a12b ($0.30/M tokens)",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Super 120B Model",
+              "type": "string"
+            },
+            "super_120b_counterfactual": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Super 120B Counterfactual",
+              "type": "string"
+            },
+            "ultra_550b_model": {
+              "default": "Nemotron-3-Ultra-550b-a55b ($1.00/M tokens)",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Ultra 550B Model",
+              "type": "string"
+            },
+            "ultra_550b_verified": {
+              "title": "Ultra 550B Verified",
+              "type": "boolean"
+            },
+            "ultra_550b_audit_note": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Ultra 550B Audit Note",
+              "type": "string"
+            }
+          },
+          "required": [
+            "super_120b_counterfactual",
+            "ultra_550b_verified",
+            "ultra_550b_audit_note"
+          ],
+          "title": "PolicyDiff",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "event_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Event Id",
+          "type": "string"
+        },
+        "timestamp": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "workstation_node": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Workstation Node",
+          "type": "string"
+        },
+        "command": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Command",
+          "type": "string"
+        },
+        "target_resource": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Target Resource",
+          "type": "string"
+        },
+        "provenance": {
+          "enum": [
+            "TRUSTED_USER",
+            "web/repo_payload"
+          ],
+          "title": "Provenance",
+          "type": "string"
+        },
+        "taint_flag": {
+          "title": "Taint Flag",
+          "type": "boolean"
+        },
+        "kernel_telemetry": {
+          "$ref": "#/$defs/KernelTelemetry"
+        },
+        "tier_resolved": {
+          "enum": [
+            "KERNEL_HARD_DENY",
+            "TIER_0",
+            "TIER_1",
+            "TIER_2"
+          ],
+          "title": "Tier Resolved",
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "ALLOWED",
+            "INTERCEPTED",
+            "AUTO_PROMOTED"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "latency_ms": {
+          "minimum": 0.0,
+          "title": "Latency Ms",
+          "type": "number"
+        },
+        "cost_usd": {
+          "minimum": 0.0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "policy_diff": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PolicyDiff"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "capability": {
+          "default": "live",
+          "enum": [
+            "live",
+            "replay",
+            "simulated"
+          ],
+          "title": "Capability",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "timestamp",
+        "workstation_node",
+        "command",
+        "target_resource",
+        "provenance",
+        "taint_flag",
+        "kernel_telemetry",
+        "tier_resolved",
+        "decision",
+        "latency_ms",
+        "cost_usd"
+      ],
+      "title": "AgentActionEvent",
+      "type": "object"
+    },
+    "ApproveDiffRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "scoped_rule": {
+          "default": "+ PERMIT 10.0.4.0/24 ON /api/v1/*",
+          "maxLength": 512,
+          "minLength": 5,
+          "title": "Scoped Rule",
+          "type": "string"
+        },
+        "trigger_followup": {
+          "default": true,
+          "title": "Trigger Followup",
+          "type": "boolean"
+        }
+      },
+      "title": "ApproveDiffRequest",
+      "type": "object"
+    },
+    "ApproveDiffResponse": {
+      "$defs": {
+        "AgentActionEvent": {
+          "additionalProperties": false,
+          "properties": {
+            "event_id": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Event Id",
+              "type": "string"
+            },
+            "timestamp": {
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Timestamp",
+              "type": "string"
+            },
+            "workstation_node": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workstation Node",
+              "type": "string"
+            },
+            "command": {
+              "maxLength": 4096,
+              "minLength": 1,
+              "title": "Command",
+              "type": "string"
+            },
+            "target_resource": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Target Resource",
+              "type": "string"
+            },
+            "provenance": {
+              "enum": [
+                "TRUSTED_USER",
+                "web/repo_payload"
+              ],
+              "title": "Provenance",
+              "type": "string"
+            },
+            "taint_flag": {
+              "title": "Taint Flag",
+              "type": "boolean"
+            },
+            "kernel_telemetry": {
+              "$ref": "#/$defs/KernelTelemetry"
+            },
+            "tier_resolved": {
+              "enum": [
+                "KERNEL_HARD_DENY",
+                "TIER_0",
+                "TIER_1",
+                "TIER_2"
+              ],
+              "title": "Tier Resolved",
+              "type": "string"
+            },
+            "decision": {
+              "enum": [
+                "ALLOWED",
+                "INTERCEPTED",
+                "AUTO_PROMOTED"
+              ],
+              "title": "Decision",
+              "type": "string"
+            },
+            "latency_ms": {
+              "minimum": 0.0,
+              "title": "Latency Ms",
+              "type": "number"
+            },
+            "cost_usd": {
+              "minimum": 0.0,
+              "title": "Cost Usd",
+              "type": "number"
+            },
+            "policy_diff": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PolicyDiff"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "capability": {
+              "default": "live",
+              "enum": [
+                "live",
+                "replay",
+                "simulated"
+              ],
+              "title": "Capability",
+              "type": "string"
+            }
+          },
+          "required": [
+            "event_id",
+            "timestamp",
+            "workstation_node",
+            "command",
+            "target_resource",
+            "provenance",
+            "taint_flag",
+            "kernel_telemetry",
+            "tier_resolved",
+            "decision",
+            "latency_ms",
+            "cost_usd"
+          ],
+          "title": "AgentActionEvent",
+          "type": "object"
+        },
+        "KernelTelemetry": {
+          "additionalProperties": false,
+          "properties": {
+            "sandbox_cmd": {
+              "default": "$ sandboxing --mode=landlock",
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Sandbox Cmd",
+              "type": "string"
+            },
+            "syscall_cmd": {
+              "default": "$ filtering --syscall=seccomp",
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Syscall Cmd",
+              "type": "string"
+            },
+            "vm_status": {
+              "default": "[STATUS: ISOLATED_VM]",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Vm Status",
+              "type": "string"
+            },
+            "override_status": {
+              "default": "[STATUS: VERIFIED_SAFE]",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Override Status",
+              "type": "string"
+            }
+          },
+          "title": "KernelTelemetry",
+          "type": "object"
+        },
+        "PolicyDiff": {
+          "additionalProperties": false,
+          "properties": {
+            "broad_antipattern": {
+              "default": "- GRANT ALL permissions TO *:*",
+              "maxLength": 512,
+              "minLength": 1,
+              "title": "Broad Antipattern",
+              "type": "string"
+            },
+            "scoped_rule": {
+              "default": "+ PERMIT 10.0.4.0/24 ON /api/v1/*",
+              "maxLength": 512,
+              "minLength": 1,
+              "title": "Scoped Rule",
+              "type": "string"
+            },
+            "super_120b_model": {
+              "default": "nemotron-3-super-120b-a12b ($0.30/M tokens)",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Super 120B Model",
+              "type": "string"
+            },
+            "super_120b_counterfactual": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Super 120B Counterfactual",
+              "type": "string"
+            },
+            "ultra_550b_model": {
+              "default": "Nemotron-3-Ultra-550b-a55b ($1.00/M tokens)",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Ultra 550B Model",
+              "type": "string"
+            },
+            "ultra_550b_verified": {
+              "title": "Ultra 550B Verified",
+              "type": "boolean"
+            },
+            "ultra_550b_audit_note": {
+              "maxLength": 1024,
+              "minLength": 1,
+              "title": "Ultra 550B Audit Note",
+              "type": "string"
+            }
+          },
+          "required": [
+            "super_120b_counterfactual",
+            "ultra_550b_verified",
+            "ultra_550b_audit_note"
+          ],
+          "title": "PolicyDiff",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "promoted": {
+          "title": "Promoted",
+          "type": "boolean"
+        },
+        "scoped_rule": {
+          "title": "Scoped Rule",
+          "type": "string"
+        },
+        "active_rules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Active Rules",
+          "type": "array"
+        },
+        "latency_ms": {
+          "minimum": 0.0,
+          "title": "Latency Ms",
+          "type": "number"
+        },
+        "followup_event": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AgentActionEvent"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "promoted",
+        "scoped_rule",
+        "active_rules",
+        "latency_ms"
+      ],
+      "title": "ApproveDiffResponse",
+      "type": "object"
+    },
+    "EscalationPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "minute": {
+          "minimum": 0,
+          "title": "Minute",
+          "type": "integer"
+        },
+        "naive_sandbox": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Naive Sandbox",
+          "type": "number"
+        },
+        "parole_reflex": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Parole Reflex",
+          "type": "number"
+        }
+      },
+      "required": [
+        "minute",
+        "naive_sandbox",
+        "parole_reflex"
+      ],
+      "title": "EscalationPoint",
+      "type": "object"
+    },
+    "TierDistribution": {
+      "additionalProperties": false,
+      "properties": {
+        "tier_0": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Tier 0",
+          "type": "integer"
+        },
+        "tier_1": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Tier 1",
+          "type": "integer"
+        },
+        "tier_2": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Tier 2",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tier_0",
+        "tier_1",
+        "tier_2"
+      ],
+      "title": "TierDistribution",
+      "type": "object"
+    },
+    "MetricsSummaryResponse": {
+      "$defs": {
+        "EscalationPoint": {
+          "additionalProperties": false,
+          "properties": {
+            "minute": {
+              "minimum": 0,
+              "title": "Minute",
+              "type": "integer"
+            },
+            "naive_sandbox": {
+              "maximum": 100.0,
+              "minimum": 0.0,
+              "title": "Naive Sandbox",
+              "type": "number"
+            },
+            "parole_reflex": {
+              "maximum": 100.0,
+              "minimum": 0.0,
+              "title": "Parole Reflex",
+              "type": "number"
+            }
+          },
+          "required": [
+            "minute",
+            "naive_sandbox",
+            "parole_reflex"
+          ],
+          "title": "EscalationPoint",
+          "type": "object"
+        },
+        "TierDistribution": {
+          "additionalProperties": false,
+          "properties": {
+            "tier_0": {
+              "maximum": 100,
+              "minimum": 0,
+              "title": "Tier 0",
+              "type": "integer"
+            },
+            "tier_1": {
+              "maximum": 100,
+              "minimum": 0,
+              "title": "Tier 1",
+              "type": "integer"
+            },
+            "tier_2": {
+              "maximum": 100,
+              "minimum": 0,
+              "title": "Tier 2",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "tier_0",
+            "tier_1",
+            "tier_2"
+          ],
+          "title": "TierDistribution",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "total_traces_evaluated": {
+          "minimum": 0,
+          "title": "Total Traces Evaluated",
+          "type": "integer"
+        },
+        "zero_day_block_rate_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Zero Day Block Rate Pct",
+          "type": "number"
+        },
+        "false_positive_rate_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "False Positive Rate Pct",
+          "type": "number"
+        },
+        "safe_auto_grant_accuracy_pct": {
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "title": "Safe Auto Grant Accuracy Pct",
+          "type": "number"
+        },
+        "p95_latency_ms": {
+          "minimum": 0.0,
+          "title": "P95 Latency Ms",
+          "type": "number"
+        },
+        "cost_per_1k_actions_usd": {
+          "minimum": 0.0,
+          "title": "Cost Per 1K Actions Usd",
+          "type": "number"
+        },
+        "tier_distribution": {
+          "$ref": "#/$defs/TierDistribution"
+        },
+        "escalation_collapse_curve": {
+          "items": {
+            "$ref": "#/$defs/EscalationPoint"
+          },
+          "title": "Escalation Collapse Curve",
+          "type": "array"
+        },
+        "active_tier0_rules": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Active Tier0 Rules",
+          "type": "array"
+        },
+        "capability": {
+          "default": "live",
+          "enum": [
+            "live",
+            "replay",
+            "simulated"
+          ],
+          "title": "Capability",
+          "type": "string"
+        }
+      },
+      "required": [
+        "total_traces_evaluated",
+        "zero_day_block_rate_pct",
+        "false_positive_rate_pct",
+        "safe_auto_grant_accuracy_pct",
+        "p95_latency_ms",
+        "cost_per_1k_actions_usd",
+        "tier_distribution",
+        "escalation_collapse_curve",
+        "active_tier0_rules"
+      ],
+      "title": "MetricsSummaryResponse",
+      "type": "object"
+    },
+    "ValidationErrorResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "title": "Error",
+          "type": "string"
+        },
+        "field_paths": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Field Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "error",
+        "field_paths"
+      ],
+      "title": "ValidationErrorResponse",
+      "type": "object"
+    }
+  }
+}

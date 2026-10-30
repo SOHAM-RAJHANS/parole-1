@@ -1,0 +1,10 @@
+.venv/
+venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+_incoming/
+_backups/
+_duplicates_archive/
+*.incoming
+.env
