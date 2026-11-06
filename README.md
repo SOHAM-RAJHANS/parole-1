@@ -267,6 +267,17 @@ The Next.js app is in `frontend/`; set Vercel's Root Directory to `frontend`, Fr
 
 The repository is provided for research and evaluation. Review the implementation and adapt it to a properly isolated, independently tested environment before any security-sensitive use.
 
+## Contributors
+
+Thank you to the contributors supporting PAROLE:
+
+<p>
+  <a href="https://github.com/Prachikaushik01"><img src="https://img.shields.io/badge/Frontend%20Contributor-Prachikaushik01-0A7EA4?style=for-the-badge&logo=github" alt="Frontend contributor: Prachikaushik01"></a>
+  <a href="https://github.com/purandhri5972"><img src="https://img.shields.io/badge/Marketing%20%26%20Business%20Model-purandhri5972-7A4E9D?style=for-the-badge&logo=github" alt="Marketing and business model contributor: purandhri5972"></a>
+</p>
+
+GitHub's repository contributor list is generated from actual commits and other qualifying contributions. These badges recognize the roles listed above; they do not alter GitHub's automatically generated contribution history.
+
 ## Documentation
 
 - [Master PRD and architecture](documentation/00_MASTER_PRD.md)
