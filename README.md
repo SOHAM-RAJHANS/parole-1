@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="assets/parole-banner.svg" alt="Animated PAROLE policy gateway visual showing local cache, typed risk checks, and optional NVIDIA synthesis" width="100%">
+  <img src="assets/parole-flow.gif" alt="Illustrative animated PAROLE policy gateway routing an agent action through a local cache, typed risk checks, and optional NVIDIA synthesis" width="100%">
+</p>
+
+<p align="center">
+  <sub><a href="assets/parole-poster.png">Prefer a still image? View the static poster.</a> · <a href="assets/parole-banner.svg">Open the vector artwork.</a></sub>
 </p>
 
 <p align="center">
@@ -84,6 +88,9 @@ Most agent integrations face a costly choice: approve too much for speed, or int
 
 ## Architecture
 
+<details>
+  <summary><strong>Open the three-tier policy flow</strong></summary>
+
 ```mermaid
 flowchart LR
     Agent["AI agent or CLI"] --> API["FastAPI policy gateway"]
@@ -105,9 +112,12 @@ flowchart LR
     Review --> Events
 ```
 
+  </details>
+
 Tier 2 can use NVIDIA's OpenAI-compatible API when `NVIDIA_API_KEY` is present; without it, the prototype's local fallback produces a **simulated** result. A verified proposal is not the same as a production authorization boundary: see [security and scope](#security-and-scope).
 
-### A request, end to end
+<details>
+  <summary><strong>Trace one request from agent to event stream</strong></summary>
 
 ```mermaid
 sequenceDiagram
@@ -146,6 +156,8 @@ sequenceDiagram
     S-->>A: Stream event to subscribers
 ```
 
+  </details>
+
 ## See PAROLE
 
 <p align="center">
@@ -155,8 +167,19 @@ sequenceDiagram
   <br>
   <a href="https://youtu.be/8UN4cxzTTTA"><strong>▶ Watch the project video</strong></a>
   &nbsp;·&nbsp;
-  <a href="documentation/assets/parole-master-deck.pdf"><strong>View the Nebius × NVIDIA master deck (PDF)</strong></a>
+  <a href="documentation/assets/parole-master-deck.pdf"><strong>View the project presentation (PDF)</strong></a>
 </p>
+
+<details>
+  <summary><strong>Open the animated decision stream</strong></summary>
+
+<p align="center">
+  <img src="assets/parole-events.gif" alt="Illustrative animated event stream showing a local policy match, typed risk review, and scoped policy validation" width="100%">
+  <br>
+  <sub>Illustrative replay artwork—not a live deployment or captured production telemetry.</sub>
+</p>
+
+</details>
 
 ## Benchmark snapshot
 
@@ -290,7 +313,10 @@ The Next.js app is in `frontend/`; set Vercel's Root Directory to `frontend`, Fr
 ```text
 .
 ├── assets/
-│   └── parole-banner.svg             # README hero artwork
+│   ├── parole-banner.svg             # Vector README hero artwork
+│   ├── parole-events.gif             # Animated illustrative event stream
+│   ├── parole-flow.gif               # Animated policy-routing hero
+│   └── parole-poster.png             # Still-image alternative to the hero GIF
 ├── backend/
 │   ├── kernel_guard.py               # Provenance and command policy gate
 │   ├── tier0_cache.py                 # Local in-memory rule cache
@@ -338,5 +364,5 @@ GitHub's repository contributor list is generated from actual commits and other 
 - [Test specification](documentation/TEST_SPEC.md)
 - [Risks and cut lines](documentation/RISKS_AND_CUT_LINES.md)
 - [Benchmark report](BENCHMARK_REPORT.md)
-- [Nebius × NVIDIA master deck (PDF)](documentation/assets/parole-master-deck.pdf)
+- [Project presentation (PDF)](documentation/assets/parole-master-deck.pdf)
 - [Project video](https://youtu.be/8UN4cxzTTTA)
