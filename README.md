@@ -171,12 +171,18 @@ sequenceDiagram
 </p>
 
 <details>
-  <summary><strong>Open the animated decision stream</strong></summary>
+  <summary><strong>Explore the animated event stream and live-to-replay path</strong></summary>
 
 <p align="center">
   <img src="assets/parole-events.gif" alt="Illustrative animated event stream showing a local policy match, typed risk review, and scoped policy validation" width="100%">
   <br>
   <sub>Illustrative replay artwork—not a live deployment or captured production telemetry.</sub>
+</p>
+
+<p align="center">
+  <img src="assets/parole-live-fallback.gif" alt="Illustrative PAROLE dashboard flow showing live Render telemetry or bundled local replay when the API is unavailable" width="100%">
+  <br>
+  <sub>The dashboard shows recorded replay when the live API is unavailable; this illustration is not a live system monitor.</sub>
 </p>
 
 </details>
@@ -290,6 +296,17 @@ The benchmark runner writes result and telemetry artifacts in the repository. Re
 
 ## Deployment
 
+<details>
+  <summary><strong>View the Render + Vercel deployment map</strong></summary>
+
+<p align="center">
+  <img src="assets/parole-deployment-map.gif" alt="Illustrative deployment map showing a GitHub repository connected to a Render FastAPI backend and Vercel Next.js frontend, with NVIDIA credentials configured only on the backend" width="100%">
+  <br>
+  <sub>Illustrative hosting map; configure the services and environment variables in their respective dashboards.</sub>
+</p>
+
+</details>
+
 ### Render API
 
 The root `render.yaml` configures the Python web service. For a manual Render setup, use:
@@ -314,8 +331,10 @@ The Next.js app is in `frontend/`; set Vercel's Root Directory to `frontend`, Fr
 .
 ├── assets/
 │   ├── parole-banner.svg             # Vector README hero artwork
+│   ├── parole-deployment-map.gif     # Animated Render and Vercel map
 │   ├── parole-events.gif             # Animated illustrative event stream
 │   ├── parole-flow.gif               # Animated policy-routing hero
+│   ├── parole-live-fallback.gif      # Animated live API / local replay flow
 │   └── parole-poster.png             # Still-image alternative to the hero GIF
 ├── backend/
 │   ├── kernel_guard.py               # Provenance and command policy gate
