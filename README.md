@@ -1,32 +1,86 @@
 <p align="center">
-  <img src="assets/parole-banner.svg" alt="PAROLE — least privilege for autonomous agents" width="100%">
+  <img src="assets/parole-banner.svg" alt="Animated PAROLE policy gateway visual showing local cache, typed risk checks, and optional NVIDIA synthesis" width="100%">
 </p>
 
 <p align="center">
-  <a href="https://youtu.be/8UN4cxzTTTA"><img src="https://img.shields.io/badge/watch-project_video-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the project video"></a>
-  <a href="documentation/assets/parole-master-deck.pdf"><img src="https://img.shields.io/badge/read-master_deck-6C5CE7?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Read the master deck"></a>
-  <img src="https://img.shields.io/badge/python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11 or newer">
-  <img src="https://img.shields.io/badge/API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
+  <a href="https://github.com/SOHAM-RAJHANS/parole-1/stargazers"><img src="https://img.shields.io/github/stars/SOHAM-RAJHANS/parole-1?style=for-the-badge&logo=github&label=stars&color=101820" alt="GitHub stars"></a>
+  <a href="https://github.com/SOHAM-RAJHANS/parole-1/commits/master"><img src="https://img.shields.io/github/last-commit/SOHAM-RAJHANS/parole-1?style=for-the-badge&logo=git&label=updated&color=101820" alt="Latest repository commit"></a>
+  <img src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11 or newer">
+  <img src="https://img.shields.io/badge/FastAPI-async%20gateway-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI backend">
+  <img src="https://img.shields.io/badge/Next.js-live%20cockpit-111111?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js frontend">
+  <img src="https://img.shields.io/badge/NVIDIA-Nemotron-76B900?style=for-the-badge&logo=nvidia&logoColor=white" alt="NVIDIA Nemotron inference">
 </p>
 
 <p align="center">
-  <strong>Autonomous Least-Privilege Governor for AI Agents</strong><br>
-  A policy gateway that routes agent actions through fast local checks before escalating uncertain decisions.
+  <a href="https://youtu.be/8UN4cxzTTTA"><img src="https://img.shields.io/badge/▶%20WATCH%20THE%20PROJECT%20DEMO-ff334f?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch the PAROLE project demo"></a>
+  <a href="#get-started"><img src="https://img.shields.io/badge/GET%20STARTED-61e6ca?style=for-the-badge&logo=rocket&logoColor=08111a" alt="Jump to setup instructions"></a>
+  <a href="documentation/assets/parole-master-deck.pdf"><img src="https://img.shields.io/badge/PROJECT%20BRIEF-7557d9?style=for-the-badge&logo=adobeacrobatreader&logoColor=white" alt="Read the project brief"></a>
 </p>
 
 ---
 
-**PAROLE** explores a practical answer to a difficult agent-security trade-off: how can routine work stay fast without letting an agent turn a broad permission request into lasting access? It combines provenance-aware policy checks, a local rule cache, typed risk evaluation, and an optional NVIDIA-hosted policy-synthesis tier.
+<p align="center">
+  <strong>Give autonomous agents room to move—not room to roam.</strong><br>
+  PAROLE is a least-privilege policy gateway that screens agent actions locally first, escalates only when needed, and streams every decision into an observable live cockpit.
+</p>
 
-> **Project status:** research and hackathon prototype. This repository is not a production sandbox, OS-level isolation product, or independent security certification. Review the [security notes](#security-and-scope) before relying on any decision.
+> **Prototype, not a production security boundary.** PAROLE demonstrates policy routing and telemetry; it does not itself sandbox processes or replace OS isolation. See [security and scope](#security-and-scope).
+
+<p align="center">
+  <a href="#architecture">Architecture</a> ·
+  <a href="#see-parole">Demo</a> ·
+  <a href="#get-started">Quick start</a> ·
+  <a href="#deployment">Deploy</a> ·
+  <a href="#contributors">Contributors</a>
+</p>
+
+<details>
+  <summary><strong>Explore the full project guide</strong></summary>
+
+- [Why PAROLE?](#why-parole)
+- [At a glance](#at-a-glance)
+- [Architecture](#architecture)
+- [See PAROLE](#see-parole)
+- [Benchmark snapshot](#benchmark-snapshot)
+- [Get started](#get-started)
+- [API surface](#api-surface)
+- [Run the checks](#run-the-checks)
+- [Deployment](#deployment)
+- [Project layout](#project-layout)
+- [Security and scope](#security-and-scope)
+- [Contributors](#contributors)
+- [Documentation](#documentation)
+</details>
+
+## Why PAROLE?
+
+Most agent integrations face a costly choice: approve too much for speed, or interrupt everything for review. PAROLE explores a third path—resolve familiar actions in a local cache, apply deterministic risk checks to uncertain actions, and use optional NVIDIA Nemotron synthesis only for the cases that need deeper analysis.
+
+<table>
+  <tr>
+    <td width="33%" valign="top"><strong>⚡ Fast by default</strong><br><br>Resolve routine actions through local policy checks before making any model request.</td>
+    <td width="33%" valign="top"><strong>🛡️ Narrow on escalation</strong><br><br>Validate every candidate policy locally and reject broad, untrusted, or unsafe rules.</td>
+    <td width="33%" valign="top"><strong>◉ Visible end to end</strong><br><br>Follow decisions over SSE in a live Next.js cockpit, or keep exploring with the local telemetry replay.</td>
+  </tr>
+</table>
 
 ## At a glance
 
-- **Fast path:** check requests against a local in-memory policy cache.
-- **Risk path:** evaluate cache misses with a deterministic, typed risk classifier.
-- **Escalation path:** optionally request a scoped policy proposal from NVIDIA Nemotron models, then validate the candidate rule locally.
-- **Observable decisions:** expose policy events over Server-Sent Events (SSE), along with health and metrics endpoints.
-- **Replayable evaluation:** run the repository's generated 1,000-trace benchmark and inspect the committed results.
+| Layer | What happens | External model call |
+| --- | --- | --- |
+| **Tier 0 · Policy cache** | Match known safe patterns and previously promoted scoped rules. | No |
+| **Tier 1 · Typed risk** | Score local blast radius and provenance/injection risk deterministically. | No |
+| **Tier 2 · NVIDIA Nemotron** | Propose and adversarially audit a scoped policy; validate it locally before use. | Optional |
+| **Telemetry · SSE + cockpit** | Stream decisions to the Next.js dashboard, with recorded replay when the API is unavailable. | No |
+
+### Built with
+
+<p>
+  <img src="https://img.shields.io/badge/API-FastAPI%20%2B%20Pydantic-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI and Pydantic">
+  <img src="https://img.shields.io/badge/Inference-NVIDIA%20Nemotron-76B900?style=flat-square&logo=nvidia&logoColor=white" alt="NVIDIA Nemotron">
+  <img src="https://img.shields.io/badge/Web-Next.js%20%2B%20TypeScript-111111?style=flat-square&logo=next.js&logoColor=white" alt="Next.js and TypeScript">
+  <img src="https://img.shields.io/badge/Deploy-Render%20%2B%20Vercel-635bff?style=flat-square&logo=vercel&logoColor=white" alt="Render backend and Vercel frontend">
+</p>
 
 ## Architecture
 
