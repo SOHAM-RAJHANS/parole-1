@@ -199,6 +199,8 @@ def export_contract_schema() -> dict[str, Any]:
             "CANONICAL_SCOPED_RULE": CANONICAL_SCOPED_RULE,
         },
         "routes": [
+            {"method": "GET", "path": "/", "request": None, "response": "dict", "demo_only": False},
+            {"method": "GET", "path": "/healthz", "request": None, "response": "dict", "demo_only": False},
             {"method": "POST", "path": "/v1/policy/evaluate", "request": "AgentActionRequest", "response": "AgentActionEvent", "demo_only": False},
             {"method": "GET", "path": "/v1/policy/stream", "request": None, "response": "SSE[AgentActionEvent]", "demo_only": False},
             {"method": "POST", "path": "/v1/policy/approve-diff", "request": "ApproveDiffRequest", "response": "ApproveDiffResponse", "demo_only": False},

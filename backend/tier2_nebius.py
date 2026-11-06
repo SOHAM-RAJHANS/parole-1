@@ -7,24 +7,40 @@ on Nebius Token Factory H100 GPUs with a 2.6s timeout circuit breaker and Nemotr
 from __future__ import annotations
 
 import asyncio
+from collections import deque
 import ipaddress
 import json
+import logging
 import os
 import re
+import threading
 import time
 from typing import Any
 
-from backend.schemas import (
-    CANONICAL_BROAD_RULE,
-    CANONICAL_SCOPED_RULE,
-    SUPER_120B_LABEL,
-    ULTRA_550B_LABEL,
-)
+try:
+    from backend.schemas import (
+        CANONICAL_BROAD_RULE,
+        CANONICAL_SCOPED_RULE,
+        SUPER_120B_LABEL,
+        ULTRA_550B_LABEL,
+    )
+except ImportError:
+    from schemas import (
+        CANONICAL_BROAD_RULE,
+        CANONICAL_SCOPED_RULE,
+        SUPER_120B_LABEL,
+        ULTRA_550B_LABEL,
+    )
 
+logger = logging.getLogger(__name__)
 NEBIUS_BASE_URL: str = os.getenv("NEBIUS_BASE_URL", "https://api.studio.nebius.ai/v1")
 SUPER_120B_MODEL_ID: str = "nvidia/nemotron-3-super-120b-a12b"
 ULTRA_550B_MODEL_ID: str = "nvidia/Nemotron-3-Ultra-550b-a55b"
 TIER2_TIMEOUT_SEC: float = float(os.getenv("PAROLE_TIER2_TIMEOUT_SEC", "2.6"))
+MAX_LIVE_CALLS_PER_MINUTE: int = 15
+_LIVE_CALL_WINDOW_SEC: float = 60.0
+_LIVE_CALL_TIMESTAMPS: deque[float] = deque()
+_LIVE_CALL_LOCK = threading.Lock()
 
 FORBIDDEN_RULE_TOKENS: tuple[str, ...] = (
     "*:*",
@@ -46,6 +62,18 @@ RFC1918_URL_RE = re.compile(
     r"(?:https?://)?((?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}))(?::\d+)?(/[^\s'\"]*)?",
     re.I,
 )
+
+
+def _claim_live_call_slot() -> bool:
+    """Reserve one outbound provider request in the process-wide rolling minute window."""
+    now = time.monotonic()
+    with _LIVE_CALL_LOCK:
+        while _LIVE_CALL_TIMESTAMPS and now - _LIVE_CALL_TIMESTAMPS[0] >= _LIVE_CALL_WINDOW_SEC:
+            _LIVE_CALL_TIMESTAMPS.popleft()
+        if len(_LIVE_CALL_TIMESTAMPS) >= MAX_LIVE_CALLS_PER_MINUTE:
+            return False
+        _LIVE_CALL_TIMESTAMPS.append(now)
+        return True
 
 
 def validate_scoped_rule_boundary(scoped_rule: str) -> tuple[bool, str]:
@@ -135,6 +163,8 @@ async def synthesize_with_super_120b(command: str, target_resource: str) -> dict
     api_key = os.getenv("NEBIUS_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("NEBIUS_API_KEY not configured")
+    if not _claim_live_call_slot():
+        raise RuntimeError("Nebius live-call budget exhausted")
 
     import httpx
 
@@ -168,6 +198,8 @@ async def audit_with_ultra_550b(command: str, scoped_rule: str) -> dict[str, Any
     api_key = os.getenv("NEBIUS_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("NEBIUS_API_KEY not configured")
+    if not _claim_live_call_slot():
+        raise RuntimeError("Nebius live-call budget exhausted")
 
     import httpx
 
@@ -230,7 +262,11 @@ async def evaluate_tier2_synthesis(
 
             diff_dict = await asyncio.wait_for(_dual_pass(), timeout=TIER2_TIMEOUT_SEC)
             capability = "live"
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "Nebius Tier 2 request failed (%s); using the local policy adapter",
+                type(exc).__name__,
+            )
             diff_dict = None
 
     if diff_dict is None:

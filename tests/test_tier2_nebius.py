@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from backend import tier2_nebius
 from backend.tier2_nebius import (
     evaluate_tier2_synthesis,
     fallback_nano_adapter,
@@ -34,6 +35,20 @@ def test_t2_n3_offline_mode_sets_simulated_capability(monkeypatch) -> None:
     )
     assert res["capability"] == "simulated"
     assert res["decision"] == "ALLOWED"
+
+
+def test_t2_n4_live_call_budget_uses_local_fallback(monkeypatch) -> None:
+    monkeypatch.setenv("NEBIUS_API_KEY", "placeholder")
+    monkeypatch.setattr(tier2_nebius, "MAX_LIVE_CALLS_PER_MINUTE", 0)
+    res = asyncio.run(
+        evaluate_tier2_synthesis(
+            "curl -s https://10.0.4.12/api/v1/users",
+            "10.0.4.12/api/v1/users",
+            auto_promote=False,
+        )
+    )
+    assert res["capability"] == "simulated"
+    assert res["policy_diff"]["scoped_rule"] == "+ PERMIT 10.0.4.0/24 ON /api/v1/*"
 
 
 def test_t2_a1_boundary_validator_rejects_0000_cidr() -> None:

@@ -76,6 +76,8 @@ def test_sch_c1_contract_json_parity() -> None:
     """Covers PRD_00 Sec 3.2: export_contract_schema matches contract.json on disk."""
     exported = export_contract_schema()
     assert exported["contract_version"] == 1
+    route_paths = {route["path"] for route in exported["routes"]}
+    assert {"/", "/healthz", "/health"} <= route_paths
     contract_file = Path("contract.json")
     if contract_file.is_file():
         on_disk = json.loads(contract_file.read_text(encoding="utf-8"))

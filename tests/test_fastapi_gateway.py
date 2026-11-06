@@ -44,6 +44,20 @@ def test_gw_n3_metrics_summary_endpoint() -> None:
     assert len(body["escalation_collapse_curve"]) == 6
 
 
+def test_gw_n4_root_and_render_healthcheck() -> None:
+    for path in ("/", "/healthz"):
+        resp = client.get(path)
+        assert resp.status_code == 200
+        assert resp.json() == {"status": "ok", "service": "parole-backend"}
+
+
+def test_gw_n5_frontend_origin_cors(monkeypatch) -> None:
+    from backend.main import _get_allowed_origins
+
+    monkeypatch.setenv("FRONTEND_ORIGIN", "https://parole.example/, https://preview.example")
+    assert _get_allowed_origins() == ["https://parole.example", "https://preview.example"]
+
+
 def test_gw_a1_10_chaos_vectors_and_422_no_echo() -> None:
     """Covers PRD_06 Sec 3.3 & Reference 11.3: 10 chaos vectors never 500 or echo payload."""
     secret_marker = "SUPER_SECRET_MARKER_DO_NOT_ECHO_999"

@@ -35,6 +35,20 @@
   },
   "routes": [
     {
+      "method": "GET",
+      "path": "/",
+      "request": null,
+      "response": "dict",
+      "demo_only": false
+    },
+    {
+      "method": "GET",
+      "path": "/healthz",
+      "request": null,
+      "response": "dict",
+      "demo_only": false
+    },
+    {
       "method": "POST",
       "path": "/v1/policy/evaluate",
       "request": "AgentActionRequest",

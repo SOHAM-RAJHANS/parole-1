@@ -190,6 +190,8 @@ Without a key, Tier 2 uses the prototype's fallback and returns a `simulated` ca
 | `GET` | `/v1/policy/stream` | Subscribe to decision and policy events over SSE |
 | `POST` | `/v1/policy/approve-diff` | Validate and add a scoped rule to the local cache |
 | `GET` | `/v1/metrics/summary` | Read current benchmark and session metrics |
+| `GET` | `/` | Basic service health |
+| `GET` | `/healthz` | Render health check |
 | `GET` | `/health` | Check gateway health and contract version |
 | `POST` | `/v1/demo/run-180s` | Run the demo sequence; intended for demonstration, not production |
 
@@ -208,6 +210,26 @@ python benchmarks/run_benchmark.py --mode in_process
 ```
 
 The benchmark runner writes result and telemetry artifacts in the repository. Review the diff before committing benchmark output.
+
+## Deployment
+
+### Render API
+
+The root `render.yaml` configures the Python web service. For a manual Render setup, use:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | repository root (`.`) |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `uvicorn backend.main:app --host 0.0.0.0 --port $PORT` |
+
+Set `PYTHON_VERSION` to `3.11.9`, `NEBIUS_API_KEY` as a secret, and `FRONTEND_ORIGIN` to the exact Vercel origin (for example, `https://your-project.vercel.app`). Multiple allowed origins can be comma-separated. The backend has no cookie-based authentication, so CORS credentials are disabled.
+
+Tier 2 limits outbound Nebius requests to 15 per rolling minute per backend process and falls back locally when the key is missing, a request fails/times out, or the limit is reached. This in-memory limit is not a global billing cap across multiple Render instances or restarts; configure provider-side usage limits as well.
+
+### Vercel frontend
+
+The Next.js app is in `frontend/`; set Vercel's Root Directory to `frontend`, Framework Preset to `Next.js`, and Build Command to `npm run build`. Set `NEXT_PUBLIC_API_URL` to the deployed Render service URL (for example, `https://parole-backend.onrender.com`). This variable is public by design and must contain only the backend URL—never an API key or token.
 
 ## Project layout
 

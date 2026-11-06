@@ -20,35 +20,56 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
-from backend import kernel_guard, sse_broadcaster, tier0_cache, tier1_jev, tier2_nebius
-from backend.schemas import (
-    CONTRACT_VERSION,
-    COST_USD_BY_TIER,
-    AgentActionEvent,
-    AgentActionRequest,
-    ApproveDiffRequest,
-    ApproveDiffResponse,
-    KernelTelemetry,
-    MetricsSummaryResponse,
-    PolicyDiff,
-    ValidationErrorResponse,
-)
+try:
+    from backend import kernel_guard, sse_broadcaster, tier0_cache, tier1_jev, tier2_nebius
+    from backend.schemas import (
+        CONTRACT_VERSION,
+        COST_USD_BY_TIER,
+        AgentActionEvent,
+        AgentActionRequest,
+        ApproveDiffRequest,
+        ApproveDiffResponse,
+        KernelTelemetry,
+        MetricsSummaryResponse,
+        PolicyDiff,
+        ValidationErrorResponse,
+    )
+except ImportError:
+    import kernel_guard
+    import sse_broadcaster
+    import tier0_cache
+    import tier1_jev
+    import tier2_nebius
+    from schemas import (
+        CONTRACT_VERSION,
+        COST_USD_BY_TIER,
+        AgentActionEvent,
+        AgentActionRequest,
+        ApproveDiffRequest,
+        ApproveDiffResponse,
+        KernelTelemetry,
+        MetricsSummaryResponse,
+        PolicyDiff,
+        ValidationErrorResponse,
+    )
 
 _demo_lock = asyncio.Lock()
 
 
 def _get_allowed_origins() -> list[str]:
-    base = [
+    default_origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
-    extra = os.getenv("PAROLE_CORS_ORIGINS", "")
-    for item in extra.split(","):
-        if item.strip() and item.strip() not in base:
-            base.append(item.strip())
-    return base
+    configured = os.getenv("FRONTEND_ORIGIN", "").strip()
+    if not configured:
+        configured = os.getenv("PAROLE_CORS_ORIGINS", "").strip()
+    if not configured:
+        return default_origins
+    origins = [origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()]
+    return origins or default_origins
 
 
 @asynccontextmanager
@@ -66,7 +87,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_get_allowed_origins(),
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -85,6 +106,16 @@ async def sanitized_validation_exception_handler(
             paths.append(loc)
     resp = ValidationErrorResponse(error="validation_error", field_paths=paths or ["body"])
     return JSONResponse(status_code=422, content=resp.model_dump())
+
+
+@app.get("/")
+async def root_health() -> dict[str, str]:
+    return {"status": "ok", "service": "parole-backend"}
+
+
+@app.get("/healthz")
+async def healthz() -> dict[str, str]:
+    return {"status": "ok", "service": "parole-backend"}
 
 
 def _now_timestamp() -> str:
