@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from backend import tier2_nebius
 from backend.tier2_nebius import (
     evaluate_tier2_synthesis,
     fallback_nano_adapter,
+    synthesize_with_super_120b,
     validate_scoped_rule_boundary,
 )
 
@@ -28,8 +30,8 @@ def test_t2_n2_fallback_nano_adapter_subnet_derivation() -> None:
 
 
 def test_t2_n3_offline_mode_sets_simulated_capability(monkeypatch) -> None:
-    """Covers PRD_04 Sec 3.2: when NEBIUS_API_KEY is absent, capability is 'simulated'."""
-    monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
+    """Without an NVIDIA API key, Tier 2 uses the local simulated adapter."""
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
     res = asyncio.run(
         evaluate_tier2_synthesis("curl -s https://10.0.4.12/api/v1/users", "10.0.4.12/api/v1/users", auto_promote=False)
     )
@@ -38,7 +40,7 @@ def test_t2_n3_offline_mode_sets_simulated_capability(monkeypatch) -> None:
 
 
 def test_t2_n4_live_call_budget_uses_local_fallback(monkeypatch) -> None:
-    monkeypatch.setenv("NEBIUS_API_KEY", "placeholder")
+    monkeypatch.setenv("NVIDIA_API_KEY", "placeholder")
     monkeypatch.setattr(tier2_nebius, "MAX_LIVE_CALLS_PER_MINUTE", 0)
     res = asyncio.run(
         evaluate_tier2_synthesis(
@@ -49,6 +51,43 @@ def test_t2_n4_live_call_budget_uses_local_fallback(monkeypatch) -> None:
     )
     assert res["capability"] == "simulated"
     assert res["policy_diff"]["scoped_rule"] == "+ PERMIT 10.0.4.0/24 ON /api/v1/*"
+
+
+def test_t2_n5_nvidia_api_uses_configured_server_key(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+    monkeypatch.setenv("NVIDIA_API_KEY", "test-nvidia-api-key")
+    monkeypatch.setattr(tier2_nebius, "NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1/")
+    monkeypatch.setattr(tier2_nebius, "_claim_live_call_slot", lambda: True)
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict[str, object]:
+            content = json.dumps({"scoped_rule": "+ PERMIT 10.0.4.0/24 ON /api/v1/*"})
+            return {"choices": [{"message": {"content": content}}]}
+
+    class FakeAsyncClient:
+        def __init__(self, timeout: float) -> None:
+            captured["timeout"] = timeout
+
+        async def __aenter__(self) -> "FakeAsyncClient":
+            return self
+
+        async def __aexit__(self, *args: object) -> None:
+            pass
+
+        async def post(self, url: str, headers: dict[str, str], json: dict[str, object]) -> FakeResponse:
+            captured["url"] = url
+            captured["authorization"] = headers.get("Authorization")
+            return FakeResponse()
+
+    monkeypatch.setattr("httpx.AsyncClient", FakeAsyncClient)
+    result = asyncio.run(synthesize_with_super_120b("curl https://10.0.4.12/api/v1/users", "10.0.4.12"))
+
+    assert result["scoped_rule"] == "+ PERMIT 10.0.4.0/24 ON /api/v1/*"
+    assert captured["url"] == "https://integrate.api.nvidia.com/v1/chat/completions"
+    assert captured["authorization"] == "Bearer test-nvidia-api-key"
 
 
 def test_t2_a1_boundary_validator_rejects_0000_cidr() -> None:

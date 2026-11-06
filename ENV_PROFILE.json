@@ -8,9 +8,9 @@
     "bind_port": 8000
   },
   "target": {
-    "provider": "Nebius AI Cloud",
+    "provider": "NVIDIA hosted inference API",
     "vm_arch": "x86_64",
-    "gpu_backend": "Nebius Token Factory H100 API",
+    "gpu_backend": "NVIDIA OpenAI-compatible API (https://integrate.api.nvidia.com/v1)",
     "primary_model": "nvidia/nemotron-3-super-120b-a12b",
     "auditor_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
     "fallback_adapter": "nemotron-nano-json-structured-adapter"

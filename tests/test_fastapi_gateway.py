@@ -58,6 +58,13 @@ def test_gw_n5_frontend_origin_cors(monkeypatch) -> None:
     assert _get_allowed_origins() == ["https://parole.example", "https://preview.example"]
 
 
+def test_gw_n6_metrics_capability_uses_nvidia_key_only(monkeypatch) -> None:
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    response = client.get("/v1/metrics/summary")
+    assert response.status_code == 200
+    assert response.json()["capability"] == "simulated"
+
+
 def test_gw_a1_10_chaos_vectors_and_422_no_echo() -> None:
     """Covers PRD_06 Sec 3.3 & Reference 11.3: 10 chaos vectors never 500 or echo payload."""
     secret_marker = "SUPER_SECRET_MARKER_DO_NOT_ECHO_999"

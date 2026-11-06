@@ -2,7 +2,7 @@
 """PAROLE Module 6: FastAPI Sovereign Gateway (backend/main.py).
 
 Wires Kernel Guard, Tier 0 PicoClaw Cache, Tier 1 TypeSafe Jev Classifier,
-Tier 2 Nebius Dual-Nemotron Synthesizer, and the Zero-Drop SSE Broadcaster.
+Tier 2 NVIDIA Dual-Nemotron Synthesizer, and the Zero-Drop SSE Broadcaster.
 """
 from __future__ import annotations
 
@@ -207,7 +207,7 @@ async def evaluate_policy(req: AgentActionRequest) -> AgentActionEvent:
             await sse_broadcaster.broadcast_event("evaluate", ev_dict)
             return event
 
-    # Step 4: Tier 2 Nebius Dual-Nemotron Synthesis (emit preliminary state immediately)
+    # Step 4: Tier 2 NVIDIA Dual-Nemotron Synthesis (emit preliminary state immediately)
     await sse_broadcaster.broadcast_event(
         "tier2_state",
         {
@@ -332,7 +332,7 @@ async def approve_policy_diff(req: ApproveDiffRequest) -> ApproveDiffResponse:
 @app.get("/v1/metrics/summary", response_model=MetricsSummaryResponse)
 async def metrics_summary() -> MetricsSummaryResponse:
     """Return canonical benchmark metrics and live session telemetry."""
-    cap = "live" if os.getenv("NEBIUS_API_KEY", "").strip() else "simulated"
+    cap = "live" if os.getenv("NVIDIA_API_KEY", "").strip() else "simulated"
     summary = sse_broadcaster.get_metrics_summary(
         active_tier0_rules=tier0_cache.get_active_rules(),
         capability=cap,
@@ -369,16 +369,16 @@ async def run_demo_180s() -> dict[str, Any]:
                 provenance="web/repo_payload",
                 taint_flag=True,
             ),
-            # Act 3: Adaptive Learning on Nebius + Hot-Reload into Tier 0
+            # Act 3: Adaptive Learning on NVIDIA + Hot-Reload into Tier 0
             AgentActionRequest(
                 command="curl -s https://10.0.4.12/api/v1/users",
-                workstation_node="NEBIUS-UBUNTU-VM-01",
+                workstation_node="NVIDIA-UBUNTU-VM-01",
                 provenance="TRUSTED_USER",
                 auto_promote=True,
             ),
             AgentActionRequest(
                 command="curl -s https://10.0.4.19/api/v1/orders",
-                workstation_node="NEBIUS-UBUNTU-VM-01",
+                workstation_node="NVIDIA-UBUNTU-VM-01",
                 provenance="TRUSTED_USER",
             ),
         ]

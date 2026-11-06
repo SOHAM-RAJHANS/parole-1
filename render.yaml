@@ -9,7 +9,9 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: NEBIUS_API_KEY
+      - key: NVIDIA_API_KEY
         sync: false
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
       - key: FRONTEND_ORIGIN
         sync: false

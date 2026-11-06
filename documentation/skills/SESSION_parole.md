@@ -7,7 +7,7 @@ date: 2026-10-24
 
 * **Competition / Deadline**: Nebius x NVIDIA Global AI Hackathon 2026 (Track 3: Enterprise & Knowledge Retrieval) / Code Freeze Oct 18, 2026; Global Deadline Oct 30, 2026 \[SOURCE: Dossier_00 p1\]
 
-* **Target Platform**: Local Workstation (`127.0.0.1:8000`) + Nebius AI Cloud Ubuntu VM (`x86_64`) + Nebius Token Factory H100 GPUs (`nvidia/nemotron-3-super-120b-a12b`, `nvidia/Nemotron-3-Ultra-550b-a55b`) \[SOURCE: Dossier_01 p5\]
+* **Target Platform**: Local Workstation (`127.0.0.1:8000`) + NVIDIA hosted inference API at `https://integrate.api.nvidia.com/v1` (`nvidia/nemotron-3-super-120b-a12b`, `nvidia/Nemotron-3-Ultra-550b-a55b`)
 
 * **Roles -> Tools**:
 
@@ -23,7 +23,7 @@ date: 2026-10-24
 
 * **Skills Verified Present**: `/atlas-contract`, `/super-mega-backend`, `/mega-system-architecture`, `/aegisops-ai`, `/adversarial-reviewer`, `/super-mega-hackathon`
 
-* **Hardware Profile**: Local PC runs lightweight FastAPI + in-memory Tier 0 cache (`< 10 MB` \[TARGET\] RAM); heavy LLM synthesis runs remotely on Nebius Token Factory over HTTPS with `2.6` second timeout circuit breaker.
+* **Hardware Profile**: Local PC runs lightweight FastAPI + in-memory Tier 0 cache (`< 10 MB` \[TARGET\] RAM); heavy LLM synthesis runs remotely through NVIDIA's API over HTTPS with a `2.6` second timeout circuit breaker.
 
 * **Backend File Matrix**:
 
@@ -63,4 +63,4 @@ date: 2026-10-24
 
   * `backend/tier0_cache.py` runs a pure-Python `ipaddress` + `fnmatch` engine by default so missing `go` binaries never block execution.
 
-* **Open Items**: Verify live `NEBIUS_API_KEY` quota on Nebius Token Factory before recording Act 3 (`A1` in `ASSUMPTIONS.md`).
+* **Open Items**: Verify live `NVIDIA_API_KEY` quota with NVIDIA before recording Act 3 (`A1` in `ASSUMPTIONS.md`).

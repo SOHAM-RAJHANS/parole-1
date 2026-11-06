@@ -70,7 +70,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `T2-N1` | `await evaluate_tier2_synthesis("curl -s https://10.0.4.12/api/v1/users", "10.0.4.12/api/v1/users", auto_promote=True)` | `decision == "AUTO_PROMOTED"`, `policy_diff["scoped_rule"] == "+ PERMIT 10.0.4.0/24 ON /api/v1/*"`, `ultra_550b_verified == True` | Canonical Tier 2 synthesis output | `PRD_04` Sec 3.2 |
 | `T2-N2` | `fallback_nano_adapter("curl -s https://10.0.8.22/api/v2/metrics", "10.0.8.22/api/v2/metrics")` | `scoped_rule == "+ PERMIT 10.0.8.0/24 ON /api/v2/*"` | `/24` subnet derivation oracle | `PRD_04` Sec 3.2 |
-| `T2-N3` | Offline execution (no `NEBIUS_API_KEY` set) | Returns valid `policy_diff` with `capability == "simulated"` and zero exceptions | Zero-downtime fallback contract | `PRD_04` Sec 3.2 |
+| `T2-N3` | Offline execution (no `NVIDIA_API_KEY` set) | Returns valid `policy_diff` with `capability == "simulated"` and zero exceptions | Zero-downtime fallback contract | `PRD_04` Sec 3.2 |
 | `T2-A1` | `validate_scoped_rule_boundary("+ PERMIT 0.0.0.0/0 ON /*")` | `(False, ...)` | Over-broad CIDR rejection | `PRD_04` Sec 3.2 |
 | `T2-A2` | `validate_scoped_rule_boundary("- GRANT ALL permissions TO *:*")` | `(False, ...)` | Wildcard grant rejection | `PRD_04` Sec 3.2 |
 | `T2-A3` | `validate_scoped_rule_boundary("+ PERMIT 169.254.169.254/32 ON /latest/*")` | `(False, ...)` | Metadata IP boundary rejection | `PRD_04` Sec 3.2 |

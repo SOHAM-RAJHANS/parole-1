@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""PAROLE Module 4: Tier 2 Nebius Dual-Nemotron Policy Synthesis & Boundary Audit (backend/tier2_nebius.py).
+"""PAROLE Module 4: Tier 2 NVIDIA Dual-Nemotron Policy Synthesis & Boundary Audit.
 
 Orchestrates Pass 1 (nvidia/nemotron-3-super-120b-a12b) and Pass 2 (nvidia/Nemotron-3-Ultra-550b-a55b)
-on Nebius Token Factory H100 GPUs with a 2.6s timeout circuit breaker and Nemotron-Nano fallback adapter.
+through NVIDIA's OpenAI-compatible API with a 2.6s timeout circuit breaker and local fallback adapter.
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ except ImportError:
     )
 
 logger = logging.getLogger(__name__)
-NEBIUS_BASE_URL: str = os.getenv("NEBIUS_BASE_URL", "https://api.studio.nebius.ai/v1")
+NVIDIA_BASE_URL: str = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 SUPER_120B_MODEL_ID: str = "nvidia/nemotron-3-super-120b-a12b"
 ULTRA_550B_MODEL_ID: str = "nvidia/Nemotron-3-Ultra-550b-a55b"
 TIER2_TIMEOUT_SEC: float = float(os.getenv("PAROLE_TIER2_TIMEOUT_SEC", "2.6"))
@@ -159,12 +159,12 @@ def fallback_nano_adapter(command: str, target_resource: str = "") -> dict[str, 
 
 
 async def synthesize_with_super_120b(command: str, target_resource: str) -> dict[str, Any]:
-    """Pass 1: Call nvidia/nemotron-3-super-120b-a12b on Nebius Token Factory."""
-    api_key = os.getenv("NEBIUS_API_KEY", "").strip()
+    """Pass 1: Request a policy proposal from NVIDIA's OpenAI-compatible API."""
+    api_key = os.getenv("NVIDIA_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("NEBIUS_API_KEY not configured")
+        raise RuntimeError("NVIDIA_API_KEY not configured")
     if not _claim_live_call_slot():
-        raise RuntimeError("Nebius live-call budget exhausted")
+        raise RuntimeError("NVIDIA live-call budget exhausted")
 
     import httpx
 
@@ -186,7 +186,7 @@ async def synthesize_with_super_120b(command: str, target_resource: str) -> dict
         ],
     }
     async with httpx.AsyncClient(timeout=TIER2_TIMEOUT_SEC) as client:
-        resp = await client.post(f"{NEBIUS_BASE_URL.rstrip('/')}/chat/completions", headers=headers, json=payload)
+        resp = await client.post(f"{NVIDIA_BASE_URL.rstrip('/')}/chat/completions", headers=headers, json=payload)
         resp.raise_for_status()
         data = resp.json()
         content = data["choices"][0]["message"]["content"]
@@ -194,12 +194,12 @@ async def synthesize_with_super_120b(command: str, target_resource: str) -> dict
 
 
 async def audit_with_ultra_550b(command: str, scoped_rule: str) -> dict[str, Any]:
-    """Pass 2: Call nvidia/Nemotron-3-Ultra-550b-a55b on Nebius Token Factory for adversarial audit."""
-    api_key = os.getenv("NEBIUS_API_KEY", "").strip()
+    """Pass 2: Request an adversarial policy audit from NVIDIA's API."""
+    api_key = os.getenv("NVIDIA_API_KEY", "").strip()
     if not api_key:
-        raise RuntimeError("NEBIUS_API_KEY not configured")
+        raise RuntimeError("NVIDIA_API_KEY not configured")
     if not _claim_live_call_slot():
-        raise RuntimeError("Nebius live-call budget exhausted")
+        raise RuntimeError("NVIDIA live-call budget exhausted")
 
     import httpx
 
@@ -222,7 +222,7 @@ async def audit_with_ultra_550b(command: str, scoped_rule: str) -> dict[str, Any
         ],
     }
     async with httpx.AsyncClient(timeout=TIER2_TIMEOUT_SEC) as client:
-        resp = await client.post(f"{NEBIUS_BASE_URL.rstrip('/')}/chat/completions", headers=headers, json=payload)
+        resp = await client.post(f"{NVIDIA_BASE_URL.rstrip('/')}/chat/completions", headers=headers, json=payload)
         resp.raise_for_status()
         data = resp.json()
         content = data["choices"][0]["message"]["content"]
@@ -236,7 +236,7 @@ async def evaluate_tier2_synthesis(
 ) -> dict[str, Any]:
     """Execute Dual-Pass Tier 2 synthesis with 2.6s timeout circuit breaker and Nano fallback."""
     t0 = time.perf_counter_ns()
-    api_key = os.getenv("NEBIUS_API_KEY", "").strip()
+    api_key = os.getenv("NVIDIA_API_KEY", "").strip()
     capability = "simulated"
     diff_dict: dict[str, Any] | None = None
 
@@ -264,7 +264,7 @@ async def evaluate_tier2_synthesis(
             capability = "live"
         except Exception as exc:
             logger.warning(
-                "Nebius Tier 2 request failed (%s); using the local policy adapter",
+                "NVIDIA Tier 2 request failed (%s); using the local policy adapter",
                 type(exc).__name__,
             )
             diff_dict = None
